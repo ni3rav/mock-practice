@@ -153,6 +153,7 @@ body {
   flex: 1 1 100%;
   margin: 0.25rem 0 0;
   font-size: 0.9375rem;
+  white-space: pre-wrap;
 }
 
 .status-message.is-error {

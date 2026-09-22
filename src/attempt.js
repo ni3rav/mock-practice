@@ -3,6 +3,7 @@ import { submitAttempt } from "./logic/attempt-state.js";
 import {
   deleteAttempt,
   findInProgress,
+  getAttempt,
   getQuestion,
   getTest,
   putAttempt,
@@ -39,6 +40,10 @@ export async function startOrResume(testId, now = Date.now()) {
 }
 
 export async function persist(attempt) {
+  const current = await getAttempt(attempt.id);
+  if (current?.status === "submitted" && attempt.status !== "submitted") {
+    return;
+  }
   await putAttempt(attempt);
 }
 

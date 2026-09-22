@@ -1,6 +1,7 @@
 import { getAttempt } from "../db.js";
 import { persist, abandon, submitAndStore } from "../attempt.js";
 import { remainingMs } from "../logic/time.js";
+import { parseNumericAnswer } from "../logic/numeric.js";
 import {
   flushTime,
   setActive,
@@ -42,7 +43,7 @@ function isAnswered(attempt, questionId) {
   if (question.type === "mcq") {
     return Boolean(response.choiceId);
   }
-  return (response.numericText ?? "").trim().length > 0;
+  return parseNumericAnswer(response.numericText ?? "") !== null;
 }
 
 function paletteClass(attempt, questionId) {
@@ -135,6 +136,9 @@ export async function renderAttempt(container, attemptId) {
   const submitMessage = submitDialog.querySelector(".submit-message");
 
   async function save(next) {
+    if (autoSubmitted) {
+      return;
+    }
     attempt = next;
     await persist(attempt);
   }
@@ -335,6 +339,16 @@ export async function renderAttempt(container, attemptId) {
     }
   }
 
+  const timeFlush = setInterval(() => {
+    if (autoSubmitted) {
+      return;
+    }
+    const now = Date.now();
+    attempt = flushTime(attempt, attempt.activeQuestionId, now, enteredAt);
+    enteredAt = now;
+    persist(attempt);
+  }, 1000);
+
   const clockInterval = setInterval(() => {
     const now = Date.now();
     paintClock(now);
@@ -345,15 +359,28 @@ export async function renderAttempt(container, attemptId) {
     }
   }, 250);
 
+  function onPageHide() {
+    if (autoSubmitted) {
+      return;
+    }
+    const now = Date.now();
+    attempt = flushTime(attempt, attempt.activeQuestionId, now, enteredAt);
+    enteredAt = now;
+    persist(attempt);
+  }
+
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("pagehide", onPageHide);
 
   renderQuestion();
 
   return () => {
     clearInterval(clockInterval);
+    clearInterval(timeFlush);
     document.removeEventListener("keydown", onKeyDown);
     document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("pagehide", onPageHide);
     shell.remove();
   };
 }

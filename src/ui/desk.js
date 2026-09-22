@@ -51,13 +51,13 @@ export async function renderDesk(container) {
     const result = await importBank(data);
     if (!result.ok) {
       showStatus(
-        `${result.errors.join(" ")} Nothing was saved.`,
+        `${result.errors.join("\n")}\nNothing was saved.`,
         true
       );
       return;
     }
     showStatus(
-      `Imported ${result.questionCount} questions and ${result.testCount} papers.`
+      `Imported ${countLabel(result.questionCount, "question", "questions")} and ${countLabel(result.testCount, "paper", "papers")}.`
     );
     redraw();
   }
@@ -174,6 +174,10 @@ export async function renderDesk(container) {
   return () => {
     shell.remove();
   };
+}
+
+function countLabel(count, singular, plural) {
+  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 function escapeHtml(text) {
