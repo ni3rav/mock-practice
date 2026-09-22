@@ -1,0 +1,109 @@
+{
+  "questions": [
+    {
+      "id": "pct-01",
+      "type": "mcq",
+      "topic": "percentages",
+      "stem": "What is 15% of 240?",
+      "choices": [
+        { "id": "a", "text": "30" },
+        { "id": "b", "text": "36" },
+        { "id": "c", "text": "40" },
+        { "id": "d", "text": "45" }
+      ],
+      "answer": "b",
+      "explanation": "15% of 240 = 0.15 × 240 = 36."
+    },
+    {
+      "id": "pct-02",
+      "type": "numeric",
+      "topic": "percentages",
+      "stem": "A shirt priced at 800 is sold at a 25% discount. The selling price is",
+      "answer": 600,
+      "explanation": "Discount = 25% of 800 = 200. Selling price = 800 − 200 = 600."
+    },
+    {
+      "id": "pct-03",
+      "type": "mcq",
+      "topic": "percentages",
+      "stem": "If 3/5 of a number is 60, what is 40% of that number?",
+      "choices": [
+        { "id": "a", "text": "32" },
+        { "id": "b", "text": "40" },
+        { "id": "c", "text": "48" },
+        { "id": "d", "text": "50" }
+      ],
+      "answer": "b",
+      "explanation": "The number is 60 ÷ (3/5) = 100. 40% of 100 = 40."
+    },
+    {
+      "id": "pct-04",
+      "type": "numeric",
+      "topic": "percentages",
+      "stem": "A value rises from 500 to 575. The percentage increase is",
+      "answer": 15,
+      "explanation": "Increase = 75. Percentage increase = (75 ÷ 500) × 100 = 15%."
+    },
+    {
+      "id": "pct-05",
+      "type": "mcq",
+      "topic": "percentages",
+      "stem": "In an exam, 72 out of 90 candidates passed. What is the pass percentage?",
+      "choices": [
+        { "id": "a", "text": "75%" },
+        { "id": "b", "text": "78%" },
+        { "id": "c", "text": "80%" },
+        { "id": "d", "text": "82%" }
+      ],
+      "answer": "c",
+      "explanation": "Pass percentage = (72 ÷ 90) × 100 = 80%."
+    },
+    {
+      "id": "pct-06",
+      "type": "numeric",
+      "topic": "percentages",
+      "stem": "After a 20% pay cut, an employee earns 48000 per month. The salary before the cut was",
+      "answer": 60000,
+      "explanation": "48000 is 80% of the original salary. Original = 48000 ÷ 0.8 = 60000."
+    },
+    {
+      "id": "pct-07",
+      "type": "mcq",
+      "topic": "percentages",
+      "stem": "A shopkeeper marks goods 50% above cost and allows a 20% discount on the marked price. His profit percent is",
+      "choices": [
+        { "id": "a", "text": "20%" },
+        { "id": "b", "text": "25%" },
+        { "id": "c", "text": "30%" },
+        { "id": "d", "text": "35%" }
+      ],
+      "answer": "a",
+      "explanation": "Marked price = 150. After 20% discount, SP = 120. Profit on cost 100 is 20%."
+    },
+    {
+      "id": "pct-08",
+      "type": "numeric",
+      "topic": "percentages",
+      "stem": "Population of a town grows by 10% in the first year and 5% in the second year. Starting from 20000, the population after two years is",
+      "answer": 23100,
+      "explanation": "After year one: 20000 × 1.10 = 22000. After year two: 22000 × 1.05 = 23100."
+    }
+  ],
+  "tests": [
+    {
+      "id": "percentages-10",
+      "title": "Percentages — 10",
+      "minutes": 10,
+      "questionIds": [
+        "pct-01",
+        "pct-02",
+        "pct-03",
+        "pct-04",
+        "pct-05",
+        "pct-06",
+        "pct-07",
+        "pct-08"
+      ]
+    }
+  ]
+}
