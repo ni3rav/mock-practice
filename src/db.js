@@ -59,16 +59,17 @@ export async function importBank(data) {
 
   const updatedAt = Date.now();
   const writeTx = db.transaction(["questions", "tests"], "readwrite");
+  const done = transactionDone(writeTx);
   const questionsStore = writeTx.objectStore("questions");
   const testsStore = writeTx.objectStore("tests");
 
   for (const question of result.questions) {
-    await requestToPromise(questionsStore.put({ ...question, updatedAt }));
+    questionsStore.put({ ...question, updatedAt });
   }
   for (const test of result.tests) {
-    await requestToPromise(testsStore.put({ ...test, updatedAt }));
+    testsStore.put({ ...test, updatedAt });
   }
-  await transactionDone(writeTx);
+  await done;
 
   return {
     ok: true,
@@ -110,15 +111,17 @@ export async function findInProgress(testId) {
 export async function putAttempt(attempt) {
   const db = await openDb();
   const tx = db.transaction("attempts", "readwrite");
-  await requestToPromise(tx.objectStore("attempts").put(attempt));
-  await transactionDone(tx);
+  const done = transactionDone(tx);
+  tx.objectStore("attempts").put(attempt);
+  await done;
 }
 
 export async function deleteAttempt(id) {
   const db = await openDb();
   const tx = db.transaction("attempts", "readwrite");
-  await requestToPromise(tx.objectStore("attempts").delete(id));
-  await transactionDone(tx);
+  const done = transactionDone(tx);
+  tx.objectStore("attempts").delete(id);
+  await done;
 }
 
 export async function getAttempt(id) {
