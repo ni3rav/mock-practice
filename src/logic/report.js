@@ -113,16 +113,19 @@ export function formatReportTime(ms) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
+function textBlock(text) {
+  const code = text.includes("\n") ? " class=\"code\"" : "";
+  return `<p${code}>${escapeHtml(text)}</p>`;
+}
+
 function questionHtml(question) {
-  const explanation = question.explanation
-    ? `<p>${escapeHtml(question.explanation)}</p>`
-    : "";
+  const explanation = question.explanation ? textBlock(question.explanation) : "";
   return `<article>
     <h3>Question ${question.number}</h3>
     <p>${escapeHtml(question.topic)}</p>
-    <p>${escapeHtml(question.stem)}</p>
-    <p>Your answer: ${escapeHtml(question.yourAnswer)}</p>
-    <p>Key: ${escapeHtml(question.key)}</p>
+    ${textBlock(question.stem)}
+    ${textBlock(`Your answer: ${question.yourAnswer}`)}
+    ${textBlock(`Key: ${question.key}`)}
     <p>Time spent: ${formatReportTime(question.timeSpentMs)}</p>
     <p>${escapeHtml(question.verdict)}</p>
     ${explanation}
@@ -164,6 +167,8 @@ export function reportHtml(report) {
     th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #d9d5cc; }
     th { background: #ece7dd; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; }
     article { background: #fbfaf7; border: 1px solid #d9d5cc; border-radius: 0; padding: 18px; margin: 12px 0; }
+    .code, p { white-space: pre-wrap; }
+    .code { font-family: "SFMono-Regular", Consolas, monospace; background: #201f1c; color: #f3efe7; padding: 16px; }
   </style>
 </head>
 <body>

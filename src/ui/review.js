@@ -24,23 +24,29 @@ function download(filename, mime, contents) {
   URL.revokeObjectURL(url);
 }
 
+function addLine(parent, className, text, code) {
+  const node = document.createElement("p");
+  node.className = code ? `${className} code-block` : className;
+  node.textContent = text;
+  parent.appendChild(node);
+  return node;
+}
+
 function questionBlock(question) {
   const block = document.createElement("article");
   block.className = "review-question";
-  block.innerHTML = `
-    <p class="review-index">Question ${question.number}</p>
-    <p class="review-topic">${escapeHtml(question.topic)}</p>
-    <p class="stem">${escapeHtml(question.stem)}</p>
-    <p class="review-row">Your answer: ${escapeHtml(question.yourAnswer)}</p>
-    <p class="review-row">Key: ${escapeHtml(question.key)}</p>
-    <p class="review-row">Time spent: ${formatReportTime(question.timeSpentMs)}</p>
-    <p class="review-verdict is-${question.verdict}">${verdictLabel(question.verdict)}</p>
-  `;
+  addLine(block, "review-index", `Question ${question.number}`, false);
+  addLine(block, "review-topic", question.topic, false);
+  addLine(block, "stem", question.stem, question.stem.includes("\n"));
+  addLine(block, "review-row", `Your answer: ${question.yourAnswer}`, question.yourAnswer.includes("\n"));
+  addLine(block, "review-row", `Key: ${question.key}`, question.key.includes("\n"));
+  addLine(block, "review-row", `Time spent: ${formatReportTime(question.timeSpentMs)}`, false);
+  const verdict = document.createElement("p");
+  verdict.className = `review-verdict is-${question.verdict}`;
+  verdict.textContent = verdictLabel(question.verdict);
+  block.appendChild(verdict);
   if (question.explanation) {
-    const explanation = document.createElement("p");
-    explanation.className = "review-explanation";
-    explanation.textContent = question.explanation;
-    block.appendChild(explanation);
+    addLine(block, "review-explanation", question.explanation, question.explanation.includes("\n"));
   }
   return block;
 }

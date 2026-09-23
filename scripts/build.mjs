@@ -54,11 +54,11 @@ await writeFile(
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <title>Mock Practice</title>
-  <link rel="stylesheet" href="./styles.css?v=7">
+  <link rel="stylesheet" href="./styles.css?v=8">
 </head>
 <body>
   <div id="app"></div>
-  <script src="./app.js?v=7"></script>
+  <script src="./app.js?v=8"></script>
 </body>
 </html>
 `
@@ -66,7 +66,7 @@ await writeFile(
 
 await writeFile(
   resolve(dist, "sw.js"),
-  `const CACHE_NAME = "mock-practice-v7";
+  `const CACHE_NAME = "mock-practice-v8";
 
 const PRECACHE = ${JSON.stringify(precache, null, 2)};
 

@@ -171,6 +171,7 @@ export async function renderAttempt(container, attemptId) {
     const now = Date.now();
 
     stemEl.textContent = question.stem;
+    stemEl.classList.toggle("code-block", question.stem.includes("\n"));
     timeOnQuestionEl.textContent = `Time on this question: ${formatMs(
       questionTimeMs(attempt, attempt.activeQuestionId, now, enteredAt)
     )}`;
@@ -191,6 +192,7 @@ export async function renderAttempt(container, attemptId) {
           btn.classList.add("is-selected");
         }
         btn.textContent = `${index + 1}. ${choice.text}`;
+        btn.classList.toggle("code-block", choice.text.includes("\n"));
         btn.addEventListener("click", async () => {
           await save(toggleChoice(attempt, question.id, choice.id));
           renderQuestion();

@@ -265,6 +265,18 @@ textarea {
   line-height: 1.15;
   letter-spacing: -0.03em;
   font-weight: 400;
+  white-space: pre-wrap;
+}
+
+.code-block {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.45;
+  letter-spacing: 0;
+  background: #201f1c;
+  color: #f3efe7;
+  padding: 16px;
+  white-space: pre-wrap;
 }
 
 .question-meta {
@@ -290,6 +302,7 @@ textarea {
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
+  white-space: pre-wrap;
 }
 
 .choice.is-selected {
@@ -517,6 +530,7 @@ textarea {
 .review-row {
   margin: 6px 0 0;
   color: #3e3c37;
+  white-space: pre-wrap;
 }
 
 .review-explanation {
@@ -526,6 +540,7 @@ textarea {
   border-left: 4px solid var(--accent);
   border-radius: 0;
   background: #f2e8df;
+  white-space: pre-wrap;
 }
 
 .back-link {

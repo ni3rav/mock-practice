@@ -77,6 +77,15 @@ describe("buildReport", () => {
     assert.equal(reportFilename(report, "json"), "percentages-10-2026-09-22.json");
   });
 
+  it("keeps line breaks and angle brackets in the saved copy", () => {
+    const paper = attempt();
+    paper.questions[0].stem = "if (i < n) {\n  return i;\n}";
+    paper.questions[0].explanation = "stop while i < n";
+    const html = reportHtml(buildReport(paper));
+    assert.match(html, /if \(i &lt; n\) \{\n {2}return i;/);
+    assert.match(html, /class="code"/);
+  });
+
   it("includes the wrong stem in the saved copy", () => {
     const html = reportHtml(buildReport(attempt()));
     assert.match(html, /What is 15% of 240\?/);

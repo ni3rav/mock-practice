@@ -236,3 +236,4 @@ Pure functions cover import validation, numeric parsing, scoring, shuffle, remai
 - 2026-09-22 — Sheet sits on a deep desk with a red margin. Papers and reports can be deleted. Binary and desktop shortcut rebuilt.
 - 2026-09-23 — Visible name is Mock Practice. The field is warm dark, and the clock is brass. README explains the local run.
 - 2026-09-23 — Theme matches the DBMS theory notes: paper page, Georgia headlines, coral accent, dark score box.
+- 2026-09-23 — Question text keeps its line breaks and is not assembled as HTML.
