@@ -1,0 +1,4 @@
+node_modules/
+dist/
+/astound-prep
+/mock-practice

@@ -3,8 +3,11 @@ import {
   getAllTests,
   findInProgress,
   listSubmittedAttempts,
+  deleteTest,
+  deleteAttempt,
 } from "../db.js";
 import { startOrResume } from "../attempt.js";
+import samplePaper from "../../sample/percentages.json" with { type: "json" };
 
 function formatLocalDateTime(epochMs) {
   return new Date(epochMs).toLocaleString(undefined, {
@@ -27,19 +30,51 @@ export async function renderDesk(container) {
   shell.className = "shell";
 
   shell.innerHTML = `
-    <h1 class="site-title">Astound Prep</h1>
+    <h1 class="site-title">Mock Practice</h1>
     <div class="import-panel">
       <label class="btn btn-primary">
         Import a paper
         <input class="file-input" type="file" accept=".json,application/json">
       </label>
       <button type="button" class="btn" data-action="sample">Load the sample paper</button>
+      <a class="btn-link" href="#/file">Question file</a>
       <p class="status-message" hidden></p>
     </div>
+    <dialog class="confirm-dialog">
+      <p class="confirm-copy"></p>
+      <div class="confirm-actions">
+        <button type="button" class="btn btn-danger" data-confirm>Delete</button>
+        <button type="button" class="btn" data-dismiss>Keep it</button>
+      </div>
+    </dialog>
   `;
 
   const statusEl = shell.querySelector(".status-message");
   const fileInput = shell.querySelector(".file-input");
+  const confirmDialog = shell.querySelector("dialog");
+  const confirmCopy = shell.querySelector(".confirm-copy");
+  let pendingDelete = null;
+
+  function askDelete(message, action) {
+    pendingDelete = action;
+    confirmCopy.textContent = message;
+    confirmDialog.showModal();
+  }
+
+  confirmDialog.querySelector("[data-dismiss]").addEventListener("click", () => {
+    pendingDelete = null;
+    confirmDialog.close();
+  });
+
+  confirmDialog.querySelector("[data-confirm]").addEventListener("click", async () => {
+    const action = pendingDelete;
+    pendingDelete = null;
+    confirmDialog.close();
+    if (action) {
+      await action();
+      await redraw();
+    }
+  });
 
   function showStatus(text, isError = false) {
     statusEl.hidden = false;
@@ -83,16 +118,7 @@ export async function renderDesk(container) {
   });
 
   shell.querySelector('[data-action="sample"]').addEventListener("click", async () => {
-    try {
-      const response = await fetch("./sample/percentages.json");
-      if (!response.ok) {
-        showStatus("The sample paper could not be loaded. Nothing was saved.", true);
-        return;
-      }
-      await importFromText(await response.text());
-    } catch {
-      showStatus("The sample paper could not be loaded. Nothing was saved.", true);
-    }
+    await handleImport(structuredClone(samplePaper));
   });
 
   container.appendChild(shell);
@@ -124,9 +150,13 @@ export async function renderDesk(container) {
         const item = document.createElement("li");
         item.className = "schedule-item";
         item.innerHTML = `
-          <p class="schedule-title">${escapeHtml(test.title)}</p>
-          <p class="schedule-meta">${test.questionIds.length} questions, ${test.minutes} minutes</p>
+          <div class="row-main">
+            <p class="schedule-title">${escapeHtml(test.title)}</p>
+            <p class="schedule-meta">${test.questionIds.length} questions, ${test.minutes} minutes</p>
+          </div>
         `;
+        const actions = document.createElement("div");
+        actions.className = "row-actions";
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "btn btn-primary";
@@ -135,7 +165,18 @@ export async function renderDesk(container) {
           const { attempt } = await startOrResume(test.id);
           location.hash = `#/attempt/${attempt.id}`;
         });
-        item.appendChild(btn);
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "btn btn-danger";
+        remove.textContent = "Delete";
+        remove.addEventListener("click", () => {
+          askDelete(
+            "Delete this paper? The questions stay in the bank. An unfinished sitting is discarded.",
+            () => deleteTest(test.id)
+          );
+        });
+        actions.append(btn, remove);
+        item.appendChild(actions);
         list.appendChild(item);
       }
       shell.appendChild(list);
@@ -154,15 +195,27 @@ export async function renderDesk(container) {
         item.className = "history-item";
         const score = attempt.score;
         item.innerHTML = `
-          <p class="history-title">${escapeHtml(attempt.testTitle)}</p>
-          <p class="history-meta">${formatLocalDateTime(attempt.submittedAt)}</p>
-          <p class="history-meta">${formatScore(score.score)} / ${score.max}</p>
+          <div class="row-main">
+            <p class="history-title">${escapeHtml(attempt.testTitle)}</p>
+            <p class="history-meta">${formatLocalDateTime(attempt.submittedAt)}</p>
+            <p class="history-meta">${formatScore(score.score)} / ${score.max}</p>
+          </div>
         `;
+        const actions = document.createElement("div");
+        actions.className = "row-actions";
         const link = document.createElement("a");
         link.className = "btn-link";
         link.href = `#/review/${attempt.id}`;
         link.textContent = "Review";
-        item.appendChild(link);
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "btn btn-danger";
+        remove.textContent = "Delete";
+        remove.addEventListener("click", () => {
+          askDelete("Delete this report?", () => deleteAttempt(attempt.id));
+        });
+        actions.append(link, remove);
+        item.appendChild(actions);
         historyList.appendChild(item);
       }
       shell.appendChild(historyList);

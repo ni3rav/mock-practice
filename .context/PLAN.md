@@ -1,4 +1,4 @@
-# Astound Prep — plan
+# Mock Practice — plan
 
 Status: approved
 Last updated: 2026-09-22
@@ -130,9 +130,10 @@ Attempt ids come from `crypto.randomUUID()`. Shuffle is Fisher-Yates, persisted 
 
 ## Screens
 
-1. **Desk.** Import control. Papers listed as an exam schedule: title, question count, minutes, and Resume or Start. Below that, submitted attempts: paper title, date, score, open review. Empty desk: the import control, one sentence on the file shape, and a pointer to the sample file.
-2. **Attempt.** The clock is the loud element. Then the stem, the choices or the numeric field, time spent on this question, mark, palette, and submit. Palette cells encode not-visited, visited-blank, answered, and a mark on top of any of those. Cell numbers are the paper sequence.
-3. **Review.** Score, the three counts, topic breakdown when topics exist, then each question with your answer, the key, right/wrong/blank, time spent, and explanation.
+1. **Desk.** Import control. A Question file link opens the schema page. Papers listed as an exam schedule: title, question count, minutes, Resume or Start, and Delete. Delete removes the paper and discards an unfinished sitting. Questions stay in the bank. Below that, submitted attempts: paper title, date, score, Review, and Delete. Delete removes that report from this browser. Empty desk: the import control, one sentence on the file shape, and a pointer to the sample file.
+1b. **Question file.** The JSON shape the importer accepts, on the same paper as the desk. One control copies that shape. This is the page to hand to an agent that already knows the curriculum.
+2. **Attempt.** The clock is the loud element. Then the stem, the choices or the numeric field, time spent on this question, mark, palette, Previous, Next, and submit. Previous and Next are disabled at the ends of the paper. Palette cells encode not-visited, visited-blank, answered, and a mark on top of any of those. Cell numbers are the paper sequence.
+3. **Review.** A mark sheet for the finished attempt. The stored score is the figure at the top, with correct, wrong, blank, and time used against the clock that was set. Then a section table, one row per topic. A question with no topic is grouped under "No topic". Each section shows how many questions, how many correct, wrong, and blank, the section score, and time spent. Wrong answers follow, each with its paper number, stem, your answer, the key, time, and explanation. Blank answers follow the same way. The full paper is listed after that. "Export report" downloads JSON. "Save a copy" downloads one HTML file of the same mark sheet. The attempt already holds the snapshot, so opening the attempt from history shows this report again. Export does not write a second copy into IndexedDB.
 4. **Confirm.** Submit and abandon each get a confirm step.
 
 Keyboard, ignored while the numeric field is focused: `1`–`5` selects a choice, `m` toggles mark, left and right arrows move between questions.
@@ -141,18 +142,19 @@ The sample file is `sample/percentages.json`: a short original percentages set w
 
 ## Visual brief
 
-This is an examination desk. The characteristic object is a printed question paper under a wall clock. The home screen is a schedule of papers. On the attempt, the remaining time is the one memorable element. Everything around it stays quiet.
+Match `~/Documents/dbms theory.html`, with square corners. Warm paper page, Georgia headlines, Inter (or the system sans) for the interface, coral accent on the primary button, and the clock and score set in a dark box. Buttons, cards, inputs, and the clock box have no border radius.
 
 Tokens:
 
-- Paper `#E4EEF2`
-- Ink `#1C1915`
-- Ruling `#9BB0BA`
-- Stamp red `#8E2A2A` for a wrong mark and the expiring clock
-- Correct mark `#1E5C40`
-- Stem face: Newsreader
-- UI face: Atkinson Hyperlegible
-- The clock uses the UI face with tabular numbers
+- Page `#F4F1EA`
+- Paper `#FBFAF7`
+- Ink `#171714`
+- Muted `#6C6A63`
+- Line `#D9D5CC`
+- Accent `#D84B2F`
+- Soft `#ECE7DD`
+- Correct `#2F6B4F`
+- Wrong `#A63D32`
 
 Quality floor: usable at phone width, visible keyboard focus, `prefers-reduced-motion` respected, contrast that stays readable for a long sitting.
 
@@ -164,16 +166,21 @@ Avoid spending freedom on these default looks: warm cream with a terracotta acce
 
 The app is an installable progressive web app. It still has no server and no accounts.
 
-- `manifest.webmanifest` with `name` "Astound Prep", `short_name` "Prep", `display` `standalone`, `start_url` `./`, `scope` `./`, `background_color` and `theme_color` `#E4EEF2`.
+- `manifest.webmanifest` with `name` "Mock Practice", `short_name` "Practice", `display` `standalone`, `start_url` `./`, `scope` `./`, `background_color` and `theme_color` `#F4F1EA`.
 - Icons at 192 and 512, plus a maskable icon. They use the paper and ink colors. The mark is a clock on a question sheet, because that is the signature of this desk.
 - A service worker caches the app shell (HTML, CSS, JS modules, manifest, icons, vendored fonts) so a refresh works offline after the first load. IndexedDB is unchanged by the worker.
-- Register the worker from the app. Cache name is versioned.
+- Register the worker from the app when the page is http or https. Cache name is versioned.
+- `file://` cannot register a service worker. `npm run build` writes `dist/`. The laptop command is the compiled binary `./mock-practice`, built with `npm run binary`. It listens on `127.0.0.1:8765`, opens a standalone window, and exits when that window closes. A second launch finds the port already taken and only opens the window. IndexedDB is tied to that origin, so papers survive the next boot. `npm run open` still opens `dist/index.html` as a file, which is a different origin and a different bank.
 - Vendor Newsreader and Atkinson Hyperlegible as woff2 under `fonts/`. Both are SIL Open Font License. Do not load them from a CDN at runtime, or the offline clock and stems fall back to a generic face.
 - `theme-color` matches the paper.
 
 ## Stack
 
-Static files, no build step, no framework.
+Source stays static ES modules with no framework. A build step bundles them so the app can be opened from disk.
+
+`npm run build` writes `dist/`: one `app.js`, the CSS, fonts, icons, manifest, and a service worker whose precache list matches those files. The sample paper is inlined into `app.js` because `fetch` of a sibling JSON file is blocked from `file://`. `npm run binary` compiles that folder into `./mock-practice` with Bun. `npm run open` builds, then opens `dist/index.html` as a file.
+
+`src/` is still what `node --test` imports. Do not point tests at `dist/`.
 
 ```
 index.html
@@ -189,10 +196,12 @@ src/main.js    wires screens
 src/ui/
 sample/percentages.json
 package.json   { "type": "module" } so node:test can import the logic
+scripts/build.mjs
+scripts/open.mjs
 .context/PLAN.md
 ```
 
-Run with a local static server. ES modules do not load reliably from `file://`.
+The unbundled source still needs a static server, because ES modules do not load reliably from `file://`. The built `dist/index.html` does not.
 
 Pure functions cover import validation, numeric parsing, scoring, shuffle, remaining-time math, and attempt state transitions (answer, mark, move, flush time, submit). Test those with `node:test`. The browser check walks import, start, refresh-resume, palette, submit-on-expiry, review, upsert, abandon, and offline reload after the service worker installs.
 
@@ -213,7 +222,7 @@ Pure functions cover import validation, numeric parsing, scoring, shuffle, remai
 - Calculator
 - Random topic drills
 - Deleting bank rows by omitting them from a JSON file
-- Deleting a submitted attempt
+- Deleting questions by a control in the app. Deleting a paper does not delete its questions.
 - Multiple users
 - Multi-tab consistency
 
@@ -221,3 +230,9 @@ Pure functions cover import validation, numeric parsing, scoring, shuffle, remai
 
 - 2026-09-22 — Plan approved and written down. No code yet.
 - 2026-09-22 — PWA added: installable shell, offline cache, vendored faces. IndiaBix and the aptitude add-on stay out.
+- 2026-09-22 — Build writes a self-contained `dist/` opened with `npm run open`. No server for that path. Install still requires hosting `dist/`.
+- 2026-09-22 — Finished attempt opens a section-wise mark sheet. Wrong and blank answers are listed. The sheet can be exported as JSON or saved as HTML.
+- 2026-09-22 — `./astound-prep` is the Bun binary on port 8765. The desk links to a question-file page that shows the import schema.
+- 2026-09-22 — Sheet sits on a deep desk with a red margin. Papers and reports can be deleted. Binary and desktop shortcut rebuilt.
+- 2026-09-23 — Visible name is Mock Practice. The field is warm dark, and the clock is brass. README explains the local run.
+- 2026-09-23 — Theme matches the DBMS theory notes: paper page, Georgia headlines, coral accent, dark score box.

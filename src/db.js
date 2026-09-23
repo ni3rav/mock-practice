@@ -116,6 +116,23 @@ export async function putAttempt(attempt) {
   await done;
 }
 
+export async function deleteTest(id) {
+  const db = await openDb();
+  const readTx = db.transaction("attempts", "readonly");
+  const attempts = await requestToPromise(
+    readTx.objectStore("attempts").index("testId").getAll(id)
+  );
+  const writeTx = db.transaction(["tests", "attempts"], "readwrite");
+  const done = transactionDone(writeTx);
+  writeTx.objectStore("tests").delete(id);
+  for (const attempt of attempts) {
+    if (attempt.status === "in_progress") {
+      writeTx.objectStore("attempts").delete(attempt.id);
+    }
+  }
+  await done;
+}
+
 export async function deleteAttempt(id) {
   const db = await openDb();
   const tx = db.transaction("attempts", "readwrite");

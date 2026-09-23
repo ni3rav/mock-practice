@@ -1,6 +1,7 @@
 import { renderDesk } from "./ui/desk.js";
 import { renderAttempt } from "./ui/attempt.js";
 import { renderReview } from "./ui/review.js";
+import { renderFileShape } from "./ui/file-shape.js";
 
 const app = document.getElementById("app");
 let cleanup = null;
@@ -35,12 +36,17 @@ async function navigate() {
     return;
   }
 
+  if (parts[0] === "file") {
+    cleanup = renderFileShape(app);
+    return;
+  }
+
   location.replace("#/");
 }
 
 window.addEventListener("hashchange", navigate);
 
-if ("serviceWorker" in navigator) {
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
 

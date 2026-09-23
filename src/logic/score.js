@@ -18,16 +18,26 @@ function isCorrectResponse(question, response) {
   return parsed !== null && numericEqual(parsed, question.answer);
 }
 
+export function gradeQuestion(question, response) {
+  if (isBlankResponse(question, response)) {
+    return "blank";
+  }
+  if (isCorrectResponse(question, response)) {
+    return "correct";
+  }
+  return "wrong";
+}
+
 export function scorePaper(questions, responses) {
   let correct = 0;
   let wrong = 0;
   let blank = 0;
 
   for (const question of questions) {
-    const response = responses[question.id];
-    if (isBlankResponse(question, response)) {
+    const verdict = gradeQuestion(question, responses[question.id]);
+    if (verdict === "blank") {
       blank += 1;
-    } else if (isCorrectResponse(question, response)) {
+    } else if (verdict === "correct") {
       correct += 1;
     } else {
       wrong += 1;

@@ -1,4 +1,4 @@
-const CACHE_NAME = "astound-prep-v1";
+const CACHE_NAME = "mock-practice-src-v1";
 
 const PRECACHE = [
   "./",
@@ -11,6 +11,7 @@ const PRECACHE = [
   "./src/ui/desk.js",
   "./src/ui/attempt.js",
   "./src/ui/review.js",
+  "./src/ui/file-shape.js",
   "./src/logic/validate.js",
   "./src/logic/numeric.js",
   "./src/logic/score.js",
@@ -18,6 +19,7 @@ const PRECACHE = [
   "./src/logic/paper.js",
   "./src/logic/time.js",
   "./src/logic/attempt-state.js",
+  "./src/logic/report.js",
   "./sample/percentages.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -66,18 +68,12 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
-      return fetch(request).then((response) => {
-        if (!response || response.status !== 200 || response.type === "opaque") {
-          return response;
-        }
+    fetch(request).then((response) => {
+      if (response && response.status === 200 && response.type !== "opaque") {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        return response;
-      });
-    })
+      }
+      return response;
+    }).catch(() => caches.match(request))
   );
 });

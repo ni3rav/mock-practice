@@ -101,6 +101,10 @@ export async function renderAttempt(container, attemptId) {
         <button type="button" class="btn mark-btn">Mark for review</button>
       </div>
       <div class="palette" role="navigation" aria-label="Question palette"></div>
+      <div class="question-nav">
+        <button type="button" class="btn" data-nav="prev">Previous</button>
+        <button type="button" class="btn" data-nav="next">Next</button>
+      </div>
       <footer class="attempt-footer">
         <button type="button" class="btn btn-primary" data-action="submit">Submit paper</button>
         <button type="button" class="btn btn-danger" data-action="abandon">Abandon paper</button>
@@ -199,6 +203,9 @@ export async function renderAttempt(container, attemptId) {
     }
 
     renderPalette();
+    const index = attempt.questionOrder.indexOf(attempt.activeQuestionId);
+    shell.querySelector('[data-nav="prev"]').disabled = index <= 0;
+    shell.querySelector('[data-nav="next"]').disabled = index >= attempt.questionOrder.length - 1;
     paintClock(now);
   }
 
@@ -239,6 +246,13 @@ export async function renderAttempt(container, attemptId) {
   markBtn.addEventListener("click", async () => {
     await save(toggleMark(attempt, attempt.activeQuestionId));
     renderQuestion();
+  });
+
+  shell.querySelector('[data-nav="prev"]').addEventListener("click", () => {
+    moveRelative(-1);
+  });
+  shell.querySelector('[data-nav="next"]').addEventListener("click", () => {
+    moveRelative(1);
   });
 
   shell.querySelector('[data-action="submit"]').addEventListener("click", () => {

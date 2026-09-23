@@ -1,11 +1,11 @@
 {
-  "name": "Astound Prep",
-  "short_name": "Prep",
+  "name": "Mock Practice",
+  "short_name": "Practice",
   "display": "standalone",
   "start_url": "./",
   "scope": "./",
-  "background_color": "#E4EEF2",
-  "theme_color": "#E4EEF2",
+  "background_color": "#F4F1EA",
+  "theme_color": "#F4F1EA",
   "icons": [
     {
       "src": "./icons/icon-192.png",
