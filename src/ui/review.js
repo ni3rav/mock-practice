@@ -1,6 +1,8 @@
 import { getAttempt } from "../db.js";
+import { splitCodeText } from "../logic/code-text.js";
 import {
   buildReport,
+  filterReportQuestions,
   formatReportTime,
   reportFilename,
   reportHtml,
@@ -32,14 +34,37 @@ function addLine(parent, className, text, code) {
   return node;
 }
 
+function addStem(parent, text) {
+  const { prose, code } = splitCodeText(text);
+  if (prose) {
+    addLine(parent, "stem", prose, !code && prose.includes("\n"));
+  }
+  if (code) {
+    addLine(parent, "stem", code, true);
+  }
+}
+
+function addLabeled(parent, label, text) {
+  const { prose, code } = splitCodeText(text);
+  if (code && !prose) {
+    addLine(parent, "review-row", label, false);
+    addLine(parent, "review-row", code, true);
+    return;
+  }
+  addLine(parent, "review-row", prose ? `${label} ${prose}` : label, false);
+  if (code) {
+    addLine(parent, "review-row", code, true);
+  }
+}
+
 function questionBlock(question) {
   const block = document.createElement("article");
   block.className = "review-question";
   addLine(block, "review-index", `Question ${question.number}`, false);
   addLine(block, "review-topic", question.topic, false);
-  addLine(block, "stem", question.stem, question.stem.includes("\n"));
-  addLine(block, "review-row", `Your answer: ${question.yourAnswer}`, question.yourAnswer.includes("\n"));
-  addLine(block, "review-row", `Key: ${question.key}`, question.key.includes("\n"));
+  addStem(block, question.stem);
+  addLabeled(block, "Your answer:", question.yourAnswer);
+  addLabeled(block, "Key:", question.key);
   addLine(block, "review-row", `Time spent: ${formatReportTime(question.timeSpentMs)}`, false);
   const verdict = document.createElement("p");
   verdict.className = `review-verdict is-${question.verdict}`;
@@ -61,22 +86,31 @@ function verdictLabel(verdict) {
   return "Blank";
 }
 
-function addQuestionGroup(shell, title, questions, emptyText) {
-  const heading = document.createElement("h2");
-  heading.className = "section-heading";
-  heading.textContent = title;
-  shell.appendChild(heading);
-  if (questions.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty-note";
-    empty.textContent = emptyText;
-    shell.appendChild(empty);
-    return;
-  }
-  for (const question of questions) {
-    shell.appendChild(questionBlock(question));
-  }
+function textCell(text) {
+  const td = document.createElement("td");
+  td.textContent = text;
+  return td;
 }
+
+function filterCell(topic, verdictId, text) {
+  const td = document.createElement("td");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "filter-link";
+  button.dataset.verdict = verdictId;
+  button.textContent = text;
+  const result = verdictId === "all" ? "every result" : verdictId;
+  button.setAttribute("aria-label", `${topic}, ${result}`);
+  td.appendChild(button);
+  return td;
+}
+
+const VERDICT_FILTERS = [
+  { id: "all", label: "Everything" },
+  { id: "correct", label: "Correct" },
+  { id: "wrong", label: "Wrong" },
+  { id: "blank", label: "Blank" },
+];
 
 export async function renderReview(container, attemptId) {
   const attempt = await getAttempt(attemptId);
@@ -157,23 +191,127 @@ export async function renderReview(container, attemptId) {
   const tbody = table.querySelector("tbody");
   for (const section of report.sections) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${escapeHtml(section.topic)}</td>
-      <td>${section.count}</td>
-      <td>${section.correct}</td>
-      <td>${section.wrong}</td>
-      <td>${section.blank}</td>
-      <td>${section.score.toFixed(2)}</td>
-      <td>${formatReportTime(section.timeSpentMs)}</td>
-    `;
+    tr.dataset.topic = section.topic;
+    tr.append(
+      filterCell(section.topic, "all", section.topic),
+      textCell(String(section.count)),
+      filterCell(section.topic, "correct", String(section.correct)),
+      filterCell(section.topic, "wrong", String(section.wrong)),
+      filterCell(section.topic, "blank", String(section.blank)),
+      textCell(section.score.toFixed(2)),
+      textCell(formatReportTime(section.timeSpentMs))
+    );
     tbody.appendChild(tr);
   }
   tableWrap.appendChild(table);
   shell.appendChild(tableWrap);
 
-  addQuestionGroup(shell, "Wrong answers", report.wrong, "No wrong answers.");
-  addQuestionGroup(shell, "Left blank", report.blank, "No blank answers.");
-  addQuestionGroup(shell, "Every question", report.questions, "This paper has no questions.");
+  let topic = "all";
+  let verdict = "all";
+
+  const filters = document.createElement("div");
+  filters.className = "report-filters";
+
+  const sectionLabel = document.createElement("label");
+  sectionLabel.className = "filter-section";
+  sectionLabel.textContent = "Section";
+  const sectionSelect = document.createElement("select");
+  sectionSelect.className = "filter-select";
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = "Every section";
+  sectionSelect.appendChild(allOption);
+  for (const section of report.sections) {
+    const option = document.createElement("option");
+    option.value = section.topic;
+    option.textContent = section.topic;
+    sectionSelect.appendChild(option);
+  }
+  sectionLabel.appendChild(sectionSelect);
+
+  const verdictGroup = document.createElement("div");
+  verdictGroup.className = "filter-set";
+  verdictGroup.setAttribute("role", "group");
+  verdictGroup.setAttribute("aria-label", "Result");
+  const verdictButtons = new Map();
+  for (const item of VERDICT_FILTERS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn filter-btn";
+    button.textContent = item.label;
+    button.addEventListener("click", () => {
+      verdict = item.id;
+      syncFilters();
+    });
+    verdictButtons.set(item.id, button);
+    verdictGroup.appendChild(button);
+  }
+  filters.append(sectionLabel, verdictGroup);
+
+  const filterStatus = document.createElement("p");
+  filterStatus.className = "filter-status";
+
+  const listHeading = document.createElement("h2");
+  listHeading.className = "section-heading";
+  const list = document.createElement("div");
+
+  function paintList() {
+    const shown = filterReportQuestions(report.questions, { topic, verdict });
+    const verdictLabel = VERDICT_FILTERS.find((item) => item.id === verdict).label;
+    const sectionLabelText = topic === "all" ? "every section" : topic;
+    listHeading.textContent = `${verdictLabel} · ${sectionLabelText}`;
+    filterStatus.textContent = `${shown.length} of ${report.questions.length}`;
+    list.replaceChildren();
+    if (shown.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "empty-note";
+      empty.textContent = "No questions match this filter.";
+      list.appendChild(empty);
+      return;
+    }
+    for (const question of shown) {
+      list.appendChild(questionBlock(question));
+    }
+  }
+
+  function syncFilters() {
+    sectionSelect.value = topic;
+    for (const [id, button] of verdictButtons) {
+      const on = id === verdict;
+      button.classList.toggle("is-on", on);
+      button.setAttribute("aria-pressed", String(on));
+    }
+    for (const tr of tbody.querySelectorAll("tr")) {
+      tr.classList.toggle("is-filtered", tr.dataset.topic === topic && topic !== "all");
+    }
+    for (const button of tbody.querySelectorAll("[data-verdict]")) {
+      const rowTopic = button.closest("tr").dataset.topic;
+      const on = rowTopic === topic && button.dataset.verdict === verdict;
+      button.classList.toggle("is-on", on);
+      button.setAttribute("aria-pressed", String(on));
+    }
+    paintList();
+  }
+
+  sectionSelect.addEventListener("change", () => {
+    topic = sectionSelect.value;
+    syncFilters();
+  });
+
+  for (const tr of tbody.querySelectorAll("tr")) {
+    const sectionTopic = tr.dataset.topic;
+    tr.querySelectorAll("[data-verdict]").forEach((button) => {
+      button.addEventListener("click", () => {
+        topic = sectionTopic;
+        verdict = button.dataset.verdict;
+        syncFilters();
+        listHeading.scrollIntoView({ block: "nearest" });
+      });
+    });
+  }
+
+  shell.append(filters, filterStatus, listHeading, list);
+  syncFilters();
 
   container.appendChild(shell);
 

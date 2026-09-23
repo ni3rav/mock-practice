@@ -1,3 +1,4 @@
+import { splitCodeText } from "./code-text.js";
 import { gradeQuestion } from "./score.js";
 
 function yourAnswerText(question, response) {
@@ -89,6 +90,14 @@ export function buildReport(attempt) {
   };
 }
 
+export function filterReportQuestions(questions, { topic = "all", verdict = "all" } = {}) {
+  return questions.filter((question) => {
+    const topicMatches = topic === "all" || question.topic === topic;
+    const verdictMatches = verdict === "all" || question.verdict === verdict;
+    return topicMatches && verdictMatches;
+  });
+}
+
 export function reportFilename(report, extension) {
   const slug = report.testTitle
     .toLowerCase()
@@ -114,8 +123,25 @@ export function formatReportTime(ms) {
 }
 
 function textBlock(text) {
-  const code = text.includes("\n") ? " class=\"code\"" : "";
-  return `<p${code}>${escapeHtml(text)}</p>`;
+  const { prose, code } = splitCodeText(text);
+  let html = "";
+  if (prose) {
+    const asCode = !code && prose.includes("\n");
+    html += `<p${asCode ? " class=\"code\"" : ""}>${escapeHtml(prose)}</p>`;
+  }
+  if (code) {
+    html += `<p class="code">${escapeHtml(code)}</p>`;
+  }
+  return html;
+}
+
+function labeledBlock(label, text) {
+  const { prose, code } = splitCodeText(text);
+  if (code && !prose) {
+    return `<p>${escapeHtml(label)}</p><p class="code">${escapeHtml(code)}</p>`;
+  }
+  const lead = prose ? `${label} ${prose}` : label;
+  return `<p>${escapeHtml(lead)}</p>${code ? `<p class="code">${escapeHtml(code)}</p>` : ""}`;
 }
 
 function questionHtml(question) {
@@ -124,8 +150,8 @@ function questionHtml(question) {
     <h3>Question ${question.number}</h3>
     <p>${escapeHtml(question.topic)}</p>
     ${textBlock(question.stem)}
-    ${textBlock(`Your answer: ${question.yourAnswer}`)}
-    ${textBlock(`Key: ${question.key}`)}
+    ${labeledBlock("Your answer:", question.yourAnswer)}
+    ${labeledBlock("Key:", question.key)}
     <p>Time spent: ${formatReportTime(question.timeSpentMs)}</p>
     <p>${escapeHtml(question.verdict)}</p>
     ${explanation}

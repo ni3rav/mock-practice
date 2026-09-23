@@ -268,6 +268,15 @@ textarea {
   white-space: pre-wrap;
 }
 
+.stem-lead {
+  display: block;
+}
+
+.stem .code-block {
+  display: block;
+  margin-top: 16px;
+}
+
 .code-block {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 14px;
@@ -501,6 +510,72 @@ textarea {
   border-bottom: 0;
 }
 
+.topic-table tr.is-filtered td {
+  background: #f2e8df;
+}
+
+.report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: end;
+  margin: 22px 0 8px;
+}
+
+.filter-section {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.filter-select {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 600;
+  min-width: 14rem;
+}
+
+.filter-set {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-btn.is-on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.filter-status {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.filter-link {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.filter-link.is-on {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .review-question {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -549,7 +624,9 @@ textarea {
 }
 
 @media print {
-  .report-actions {
+  .report-actions,
+  .report-filters,
+  .filter-status {
     display: none;
   }
 }

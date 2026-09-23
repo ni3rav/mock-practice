@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildReport, reportFilename, reportHtml } from "../src/logic/report.js";
+import { splitCodeText } from "../src/logic/code-text.js";
+import { buildReport, filterReportQuestions, reportFilename, reportHtml } from "../src/logic/report.js";
 import { scorePaper } from "../src/logic/score.js";
 
 function attempt() {
@@ -91,5 +92,26 @@ describe("buildReport", () => {
     assert.match(html, /What is 15% of 240\?/);
     assert.match(html, /Wrong answers/);
     assert.match(html, /-0\.25/);
+  });
+
+  it("keeps the sentence out of a code block that follows a blank line", () => {
+    const paper = attempt();
+    paper.questions[0].stem = "How many rows?\n\nSELECT id\nFROM books;";
+    paper.questions[0].choices[0].text = "SELECT id\nFROM books";
+    const html = reportHtml(buildReport(paper));
+    assert.match(html, /<p>How many rows\?<\/p><p class="code">SELECT id/);
+    const split = splitCodeText(paper.questions[0].stem);
+    assert.equal(split.prose, "How many rows?");
+    assert.match(split.code, /^SELECT id/);
+  });
+});
+
+describe("filterReportQuestions", () => {
+  it("narrows by section and result together", () => {
+    const report = buildReport(attempt());
+    assert.equal(filterReportQuestions(report.questions, { topic: "ratios", verdict: "blank" }).length, 1);
+    assert.equal(filterReportQuestions(report.questions, { topic: "ratios", verdict: "wrong" }).length, 0);
+    assert.equal(filterReportQuestions(report.questions, { verdict: "correct" })[0].topic, "No topic");
+    assert.equal(filterReportQuestions(report.questions).length, 3);
   });
 });

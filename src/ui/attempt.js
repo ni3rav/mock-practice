@@ -1,5 +1,6 @@
 import { getAttempt } from "../db.js";
 import { persist, abandon, submitAndStore } from "../attempt.js";
+import { splitCodeText } from "../logic/code-text.js";
 import { remainingMs } from "../logic/time.js";
 import { parseNumericAnswer } from "../logic/numeric.js";
 import {
@@ -10,6 +11,35 @@ import {
   toggleMark,
   countOpen,
 } from "../logic/attempt-state.js";
+
+function paintStem(stemEl, text) {
+  const { prose, code } = splitCodeText(text);
+  stemEl.className = "stem";
+  stemEl.replaceChildren();
+  if (code && !prose) {
+    stemEl.classList.add("code-block");
+    stemEl.textContent = code;
+    return;
+  }
+  if (prose) {
+    const lead = document.createElement("span");
+    lead.className = "stem-lead";
+    lead.textContent = prose;
+    stemEl.appendChild(lead);
+  }
+  if (code) {
+    const block = document.createElement("span");
+    block.className = "code-block";
+    block.textContent = code;
+    stemEl.appendChild(block);
+  }
+}
+
+function paintChoice(btn, index, text) {
+  const { prose, code } = splitCodeText(text);
+  btn.classList.toggle("code-block", Boolean(code) && !prose);
+  btn.textContent = code && !prose ? `${index + 1}.\n${code}` : `${index + 1}. ${prose}`;
+}
 
 function formatRemaining(ms) {
   const clamped = Math.max(0, ms);
@@ -93,7 +123,7 @@ export async function renderAttempt(container, attemptId) {
       <p class="clock" aria-live="polite"></p>
     </header>
     <div class="paper-sheet">
-      <p class="stem"></p>
+      <div class="stem"></div>
       <p class="question-meta"></p>
       <div class="choices" hidden></div>
       <input class="numeric-input" hidden inputmode="decimal" autocomplete="off">
@@ -170,8 +200,7 @@ export async function renderAttempt(container, attemptId) {
     const response = attempt.responses[attempt.activeQuestionId];
     const now = Date.now();
 
-    stemEl.textContent = question.stem;
-    stemEl.classList.toggle("code-block", question.stem.includes("\n"));
+    paintStem(stemEl, question.stem);
     timeOnQuestionEl.textContent = `Time on this question: ${formatMs(
       questionTimeMs(attempt, attempt.activeQuestionId, now, enteredAt)
     )}`;
@@ -191,8 +220,7 @@ export async function renderAttempt(container, attemptId) {
         if (response.choiceId === choice.id) {
           btn.classList.add("is-selected");
         }
-        btn.textContent = `${index + 1}. ${choice.text}`;
-        btn.classList.toggle("code-block", choice.text.includes("\n"));
+        paintChoice(btn, index, choice.text);
         btn.addEventListener("click", async () => {
           await save(toggleChoice(attempt, question.id, choice.id));
           renderQuestion();
